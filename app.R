@@ -51,7 +51,11 @@ ui <- fluidPage(
          
       )
    )
-future_value <- function(amount, rate, years){
+
+
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+  future_value <- function(amount, rate, years){
   pv = amount
   factor = (1 + rate) ^ years
   fv = pv * factor
@@ -74,8 +78,6 @@ growing_annuity <- function(contrib, rate, growth, years){
   return(fvga)
 }
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
   modalities <- reactive({
     n = input$year
     x = 0
@@ -94,6 +96,11 @@ server <- function(input, output) {
     return(modalities1)
   })
   
+  modalities2 <- reactive({
+   modalities3 <- gather(modalities(), type, Combine, -year)
+      return(modalities3)
+  })
+  
   output$plot <- renderPlot(
     if(input$facet == "No"){
     ggplot(modalities())+
@@ -102,14 +109,11 @@ server <- function(input, output) {
       geom_line(aes(x = modalities()$year, y = modalities()$growing_contrib,col = "blue"))+
       scale_colour_manual(values=c("yellow" ,"red","blue"), label = c("growing_contrib", "fixed_contrib", "no_contrib"))}
     else if(input$facet == "Yes"){
-      row = cbind(c(input$iamount,b,input$iamount,c,input$iamount,d))
-      year = cbind(c(0,a,0,a,0,a))
-      type <- c(rep("no_contrib",21),rep("fixed_contrib",21),rep("growing_contrib",21))
-      type <- as.factor(type)
-      modalities2 <- data.frame(type,year,row)
-      ggplot(modalities2)+
-        geom_area(aes(x = modalities2$year,y = modalities2$row,color = factor(type),fill = factor(type)))+
-        facet_grid(type)
+      ggplot(modalities2(), aes(x = modalities2()$year,y = modalities2()$Combine,color = factor(modalities2()$type),fill = factor(modalities2()$type)))+
+        geom_area()+
+        geom_line()+
+        geom_point()+
+        facet_grid(.~modalities2()$type)
       }
   )
   
